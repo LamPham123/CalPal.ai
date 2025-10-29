@@ -67,4 +67,28 @@ export default defineSchema({
     createdAt: v.number(),
     expiresAt: v.number(),
   }).index("by_user_status", ["userId", "status"]),
+
+  agent_threads: defineTable({
+    userId: v.id("users"),
+    title: v.string(), // auto-generated from first message
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_user", ["userId"]),
+
+  agent_messages: defineTable({
+    threadId: v.id("agent_threads"),
+    role: v.union(v.literal("user"), v.literal("assistant"), v.literal("system")),
+    content: v.string(),
+    toolCalls: v.optional(v.any()), // AI SDK tool calls
+    createdAt: v.number(),
+  }).index("by_thread", ["threadId"]),
+
+  agent_memory: defineTable({
+    threadId: v.id("agent_threads"),
+    key: v.string(), // e.g., "preferred_meeting_duration", "typical_work_hours"
+    value: v.string(), // JSON stringified data
+    updatedAt: v.number(),
+  })
+    .index("by_thread", ["threadId"])
+    .index("by_thread_key", ["threadId", "key"]),
 });

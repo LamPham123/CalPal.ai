@@ -12,17 +12,20 @@ export class GoogleCalendarClient {
   private accessToken: string;
   private refreshToken: string;
   private expiresAt: number;
+  private userTimezone: string;
 
   private constructor(
     userId: Id<"users">,
     accessToken: string,
     refreshToken: string,
-    expiresAt: number
+    expiresAt: number,
+    userTimezone: string
   ) {
     this.userId = userId;
     this.accessToken = accessToken;
     this.refreshToken = refreshToken;
     this.expiresAt = expiresAt;
+    this.userTimezone = userTimezone;
   }
 
   static async forUser(userId: Id<"users">): Promise<GoogleCalendarClient> {
@@ -32,6 +35,10 @@ export class GoogleCalendarClient {
       throw new Error("No tokens found for user");
     }
 
+    // Get user info to retrieve timezone
+    const user = await convex.query(api.users.getCurrentUser, { userId });
+    const userTimezone = user?.timezone || "America/Los_Angeles";
+
     // Decrypt tokens
     const accessToken = decrypt(tokens.accessToken);
     const refreshToken = decrypt(tokens.refreshToken);
@@ -40,7 +47,8 @@ export class GoogleCalendarClient {
       userId,
       accessToken,
       refreshToken,
-      tokens.expiresAt
+      tokens.expiresAt,
+      userTimezone
     );
   }
 
@@ -107,27 +115,53 @@ export class GoogleCalendarClient {
     description?: string;
     calendarId?: string;
   }): Promise<calendar_v3.Schema$Event> {
-    const calendar = await this.getCalendarClient();
-
-    const response = await calendar.events.insert({
+    console.log("📅 GoogleCalendarClient.createEvent - Starting", {
+      userId: this.userId,
+      title: event.title,
+      start: event.start,
+      end: event.end,
       calendarId: event.calendarId || "primary",
-      requestBody: {
-        summary: event.title,
-        start: {
-          dateTime: event.start,
-          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        },
-        end: {
-          dateTime: event.end,
-          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        },
-        attendees: event.attendees?.map((email) => ({ email })),
-        location: event.location,
-        description: event.description,
-      },
     });
 
-    return response.data;
+    const calendar = await this.getCalendarClient();
+    console.log("✅ GoogleCalendarClient.createEvent - Got calendar client");
+
+    const requestBody = {
+      summary: event.title,
+      start: {
+        dateTime: event.start,
+        timeZone: this.userTimezone,
+      },
+      end: {
+        dateTime: event.end,
+        timeZone: this.userTimezone,
+      },
+      attendees: event.attendees?.map((email) => ({ email })),
+      location: event.location,
+      description: event.description,
+    };
+
+    console.log("📤 GoogleCalendarClient.createEvent - Request body", requestBody);
+
+    try {
+      const response = await calendar.events.insert({
+        calendarId: event.calendarId || "primary",
+        requestBody,
+      });
+
+      console.log("✅ GoogleCalendarClient.createEvent - Success", {
+        eventId: response.data.id,
+        htmlLink: response.data.htmlLink,
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error("❌ GoogleCalendarClient.createEvent - Error", {
+        error: error instanceof Error ? error.message : String(error),
+        userId: this.userId,
+      });
+      throw error;
+    }
   }
 
   async updateEvent(
@@ -152,13 +186,13 @@ export class GoogleCalendarClient {
         start: updates.start
           ? {
               dateTime: updates.start,
-              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+              timeZone: this.userTimezone,
             }
           : undefined,
         end: updates.end
           ? {
               dateTime: updates.end,
-              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+              timeZone: this.userTimezone,
             }
           : undefined,
         attendees: updates.attendees?.map((email) => ({ email })),

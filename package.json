@@ -12,25 +12,32 @@
     "setup": "node scripts/setup-check.js"
   },
   "dependencies": {
-    "next": "^15.0.2",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "@ai-sdk/openai": "^2.0.30",
+    "@ai-sdk/react": "^2.0.8",
+    "ai": "^5.0.44",
+    "clsx": "^2.1.1",
     "convex": "^1.16.0",
     "convex-helpers": "^0.1.59",
-    "googleapis": "^144.0.0",
     "date-fns": "^4.1.0",
+    "googleapis": "^144.0.0",
+    "lucide-react": "^0.548.0",
+    "next": "^15.0.2",
+    "openai": "^4.82.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^3.3.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^22.7.9",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
-    "typescript": "^5.6.3",
-    "tailwindcss": "^3.4.14",
-    "postcss": "^8.4.47",
     "autoprefixer": "^10.4.20",
     "eslint": "^8.57.0",
     "eslint-config-next": "^15.0.2",
-    "tsx": "^4.19.1"
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.14",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3"
   }
 }

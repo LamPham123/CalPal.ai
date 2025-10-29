@@ -1,10 +1,16 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { NextRequest } from "next/server";
 import { Id } from "@/convex/_generated/dataModel";
 
 export async function getUserId(): Promise<Id<"users"> | null> {
   const cookieStore = await cookies();
   const userId = cookieStore.get("user_id")?.value;
+  return userId as Id<"users"> | null;
+}
+
+export function getUserIdFromRequest(req: NextRequest): Id<"users"> | null {
+  const userId = req.cookies.get("user_id")?.value;
   return userId as Id<"users"> | null;
 }
 

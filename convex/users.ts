@@ -57,3 +57,16 @@ export const getCurrentUser = query({
     return await ctx.db.get(args.userId);
   },
 });
+
+export const updateTimezone = mutation({
+  args: {
+    userId: v.id("users"),
+    timezone: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.userId, {
+      timezone: args.timezone,
+    });
+    return { success: true };
+  },
+});
