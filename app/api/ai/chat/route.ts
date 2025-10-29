@@ -118,32 +118,53 @@ export async function POST(req: NextRequest) {
         }
 
         // Save only new messages (not already in DB)
-        const existingMessageCount = messages.length;
+        // Note: messages includes the user's new message, but it hasn't been saved yet
+        // We need to save from messages.length - 1 (the new user message) onwards
+        const existingMessageCount = messages.length - 1;
         const newMessages = finalMessages.slice(existingMessageCount);
 
         for (const message of newMessages) {
           try {
-            console.log(`💾 Saving message ${message.id}:`, {
+            console.log(`💾 Attempting to save message ${message.id}:`, {
               role: message.role,
               hasParts: !!message.parts,
               partsLength: message.parts?.length,
+              hasContent: 'content' in message,
+              contentType: typeof message.content,
+              fullMessage: message,
               userId,
             });
 
-            // Extract text content from parts
+            // Extract text content from parts or content property
             let content = "";
-            if (message.parts) {
+            if (message.parts && message.parts.length > 0) {
               const textParts = message.parts
                 .filter((p: any) => p.type === "text")
                 .map((p: any) => p.text);
               content = textParts.join("\n");
+              console.log(`📝 Extracted content from parts:`, content);
+            } else if ('content' in message && message.content) {
+              // User messages typically have content directly
+              content = message.content as string;
+              console.log(`📝 Using direct content:`, content);
             }
+
+            if (!content) {
+              console.warn(`⚠️ No content found for message ${message.id}, skipping save`);
+              continue;
+            }
+
+            console.log(`💾 Saving message with content:`, {
+              threadId: actualThreadId,
+              role: message.role,
+              contentLength: content.length,
+            });
 
             // Save the message
             await saveMessage({
               threadId: actualThreadId,
               role: message.role as "user" | "assistant" | "system",
-              content: content || "",
+              content: content,
               toolCalls: message.parts?.filter((p: any) => p.type === "tool-call"),
             });
 

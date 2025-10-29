@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
 
     // Set session cookie
     response.cookies.set("user_id", userId, {
-      httpOnly: true,
+      httpOnly: false, // Allow client-side access
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 60 * 60 * 24 * 7, // 7 days

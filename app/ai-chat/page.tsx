@@ -33,17 +33,24 @@ export default function AIChatPage() {
 
   // Load threads
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      console.log("No userId, skipping thread load");
+      setIsLoadingThreads(false);
+      return;
+    }
 
     const loadThreads = async () => {
       try {
+        console.log("Loading threads for userId:", userId);
         setIsLoadingThreads(true);
         const threadList = await convex.query(api.agent_threads.listThreads, {
           userId,
         });
+        console.log("Loaded threads:", threadList);
         setThreads(threadList);
       } catch (error) {
         console.error("Error loading threads:", error);
+        alert("Failed to load conversations: " + (error instanceof Error ? error.message : String(error)));
       } finally {
         setIsLoadingThreads(false);
       }

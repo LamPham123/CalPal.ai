@@ -31,8 +31,14 @@ export function AIChatInterface({
   const [hasStreamError, setHasStreamError] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { messages, sendMessage, status, error, stop, regenerate } = useChat({
+  // Update currentThreadId when threadId prop changes
+  useEffect(() => {
+    setCurrentThreadId(threadId);
+  }, [threadId]);
+
+  const { messages, sendMessage, status, error, stop, regenerate, setMessages } = useChat({
     id: currentThreadId || "new-chat",
+    initialMessages: initialMessages,
     transport: new DefaultChatTransport({
       api: "/api/ai/chat",
       body: () => ({
@@ -48,6 +54,17 @@ export function AIChatInterface({
       setHasStreamError(true);
     },
   });
+
+  // Update messages when initialMessages or threadId changes
+  useEffect(() => {
+    if (initialMessages.length > 0) {
+      console.log("Setting initial messages:", initialMessages);
+      setMessages(initialMessages);
+    } else {
+      console.log("Clearing messages for new thread");
+      setMessages([]);
+    }
+  }, [threadId, initialMessages, setMessages]);
 
   const isLoading = status === "streaming" || status === "submitted";
 
